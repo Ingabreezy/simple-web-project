@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        BASE_PORT = 8082
         CONTAINER_NAME = "simple-web-container-${env.BUILD_ID}"
     }
 
@@ -19,26 +18,9 @@ pipeline {
         stage('Find Free Port') {
             steps {
                 script {
-                    // Attempt to find an available port by incrementing the base port
-                    def port = BASE_PORT
-                    def maxRetries = 10
-                    def retryCount = 0
-                    while (retryCount < maxRetries) {
-                        try {
-                            bat "docker run --rm -d -p ${port}:8080 --name port-check-container simple-web-project"
-                            bat "docker stop port-check-container"
-                            env.DYNAMIC_PORT = "${port}"
-                            echo "Selected free port: ${env.DYNAMIC_PORT}"
-                            break
-                        } catch (Exception e) {
-                            echo "Port ${port} not available, retrying..."
-                            retryCount++
-                            port++
-                            if (retryCount == maxRetries) {
-                                error "Failed to find an available port after ${maxRetries} retries"
-                            }
-                        }
-                    }
+                    def port = bat(script: 'python find_free_port.py', returnStdout: true).trim()
+                    env.DYNAMIC_PORT = port
+                    echo "Selected free port: ${env.DYNAMIC_PORT}"
                 }
             }
         }
