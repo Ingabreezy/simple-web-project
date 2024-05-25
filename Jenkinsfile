@@ -14,7 +14,12 @@ pipeline {
             steps {
                 script {
                     echo 'Running tests...'
-                    bat 'docker run --rm -d -p 8082:8080 --name simple-web-container simple-web-project'
+                    // Stop and remove any existing container with the same name
+                    bat '''
+                    docker stop simple-web-container || true
+                    docker rm simple-web-container || true
+                    docker run --rm -d -p 8082:8080 --name simple-web-container simple-web-project
+                    '''
                     // Adding a delay to ensure the server is up before running tests
                     bat '''
                     @echo off
@@ -29,7 +34,12 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying the Docker container...'
-                    bat 'docker run -d -p 8082:8080 simple-web-project'
+                    // Stop and remove any existing container with the same name before deployment
+                    bat '''
+                    docker stop simple-web-container || true
+                    docker rm simple-web-container || true
+                    docker run -d -p 8082:8080 --name simple-web-container simple-web-project
+                    '''
                 }
             }
         }
