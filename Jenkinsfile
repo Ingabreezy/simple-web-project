@@ -5,19 +5,22 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    echo 'Building the Docker image...'
+                    echo "Starting Build: ${new Date()}"
                     bat 'docker build -t simple-web-project .'
+                    echo "Build Completed: ${new Date()}"
                 }
             }
         }
         stage('Test') {
             steps {
                 script {
-                    echo 'Running tests...'
-                    // Stop and remove any existing container with the same name
+                    echo "Starting Test: ${new Date()}"
+                    // Ensure any existing container is stopped and removed
                     bat '''
-                    docker stop simple-web-container || true
-                    docker rm simple-web-container || true
+                    docker stop simple-web-container || exit 0
+                    docker rm simple-web-container || exit 0
+                    '''
+                    bat '''
                     docker run --rm -d -p 8082:8080 --name simple-web-container simple-web-project
                     '''
                     // Adding a delay to ensure the server is up before running tests
@@ -27,19 +30,23 @@ pipeline {
                     '''
                     bat 'docker exec simple-web-container python test_script.py'
                     bat 'docker stop simple-web-container'
+                    echo "Test Completed: ${new Date()}"
                 }
             }
         }
         stage('Deploy') {
             steps {
                 script {
-                    echo 'Deploying the Docker container...'
-                    // Stop and remove any existing container with the same name before deployment
+                    echo "Starting Deploy: ${new Date()}"
+                    // Ensure any existing container is stopped and removed
                     bat '''
-                    docker stop simple-web-container || true
-                    docker rm simple-web-container || true
+                    docker stop simple-web-container || exit 0
+                    docker rm simple-web-container || exit 0
+                    '''
+                    bat '''
                     docker run -d -p 8082:8080 --name simple-web-container simple-web-project
                     '''
+                    echo "Deploy Completed: ${new Date()}"
                 }
             }
         }
