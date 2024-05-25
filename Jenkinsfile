@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        DYNAMIC_PORT = "8082"
         CONTAINER_NAME = "simple-web-container-${env.BUILD_ID}"
     }
 
@@ -10,17 +11,8 @@ pipeline {
             steps {
                 script {
                     echo "Starting Build: ${new Date()}"
-                    bat 'docker build -t simple-web-project .'
+                    bat 'docker-compose build'
                     echo "Build Completed: ${new Date()}"
-                }
-            }
-        }
-        stage('Find Free Port') {
-            steps {
-                script {
-                    def port = bat(script: 'python find_free_port.py', returnStdout: true).trim()
-                    env.DYNAMIC_PORT = port
-                    echo "Selected free port: ${env.DYNAMIC_PORT}"
                 }
             }
         }
@@ -28,20 +20,17 @@ pipeline {
             steps {
                 script {
                     echo "Starting Test: ${new Date()}"
-                    // Ensure any existing container with the same name is stopped and removed
-                    bat '''
-                    docker stop ${CONTAINER_NAME} || exit 0
-                    docker rm ${CONTAINER_NAME} || exit 0
-                    '''
-                    // Run the container with the dynamically chosen port
-                    bat "docker run --rm -d -p ${env.DYNAMIC_PORT}:8080 --name ${CONTAINER_NAME} simple-web-project"
+                    // Ensure any existing container is stopped and removed
+                    bat 'docker-compose down'
+                    // Start the container
+                    bat 'docker-compose up -d'
                     // Adding a delay to ensure the server is up before running tests
                     bat '''
                     @echo off
                     ping 127.0.0.1 -n 6 > nul
                     '''
-                    bat "docker exec ${CONTAINER_NAME} python test_script.py"
-                    bat "docker stop ${CONTAINER_NAME}"
+                    bat 'docker-compose exec web python test_script.py'
+                    bat 'docker-compose down'
                     echo "Test Completed: ${new Date()}"
                 }
             }
@@ -50,13 +39,10 @@ pipeline {
             steps {
                 script {
                     echo "Starting Deploy: ${new Date()}"
-                    // Ensure any existing container with the same name is stopped and removed
-                    bat '''
-                    docker stop ${CONTAINER_NAME} || exit 0
-                    docker rm ${CONTAINER_NAME} || exit 0
-                    '''
-                    // Run the container with the dynamically chosen port
-                    bat "docker run -d -p ${env.DYNAMIC_PORT}:8080 --name ${CONTAINER_NAME} simple-web-project"
+                    // Ensure any existing container is stopped and removed
+                    bat 'docker-compose down'
+                    // Start the container
+                    bat 'docker-compose up -d'
                     echo "Deploy Completed: ${new Date()}"
                 }
             }
