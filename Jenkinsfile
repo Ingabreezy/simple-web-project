@@ -19,6 +19,8 @@ pipeline {
                     bat '''
                     docker stop simple-web-container || exit 0
                     docker rm simple-web-container || exit 0
+                    @echo off
+                    ping 127.0.0.1 -n 5 > nul
                     '''
                     bat '''
                     docker run --rm -d -p 8082:8080 --name simple-web-container simple-web-project
@@ -42,6 +44,8 @@ pipeline {
                     bat '''
                     docker stop simple-web-container || exit 0
                     docker rm simple-web-container || exit 0
+                    @echo off
+                    ping 127.0.0.1 -n 5 > nul
                     '''
                     bat '''
                     docker run -d -p 8082:8080 --name simple-web-container simple-web-project
