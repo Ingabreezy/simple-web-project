@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  web:
+    image: simple-web-project
+    build: .
+    ports:
+      - "8082:8080"

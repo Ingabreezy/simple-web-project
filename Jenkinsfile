@@ -6,7 +6,7 @@ pipeline {
             steps {
                 script {
                     echo "Starting Build: ${new Date()}"
-                    bat 'docker build -t simple-web-project .'
+                    bat 'docker-compose build'
                     echo "Build Completed: ${new Date()}"
                 }
             }
@@ -16,22 +16,16 @@ pipeline {
                 script {
                     echo "Starting Test: ${new Date()}"
                     // Ensure any existing container is stopped and removed
-                    bat '''
-                    docker stop simple-web-container || exit 0
-                    docker rm simple-web-container || exit 0
-                    @echo off
-                    ping 127.0.0.1 -n 5 > nul
-                    '''
-                    bat '''
-                    docker run --rm -d -p 8082:8080 --name simple-web-container simple-web-project
-                    '''
+                    bat 'docker-compose down'
+                    // Start the container
+                    bat 'docker-compose up -d'
                     // Adding a delay to ensure the server is up before running tests
                     bat '''
                     @echo off
                     ping 127.0.0.1 -n 6 > nul
                     '''
-                    bat 'docker exec simple-web-container python test_script.py'
-                    bat 'docker stop simple-web-container'
+                    bat 'docker-compose exec web python test_script.py'
+                    bat 'docker-compose down'
                     echo "Test Completed: ${new Date()}"
                 }
             }
@@ -41,15 +35,9 @@ pipeline {
                 script {
                     echo "Starting Deploy: ${new Date()}"
                     // Ensure any existing container is stopped and removed
-                    bat '''
-                    docker stop simple-web-container || exit 0
-                    docker rm simple-web-container || exit 0
-                    @echo off
-                    ping 127.0.0.1 -n 5 > nul
-                    '''
-                    bat '''
-                    docker run -d -p 8082:8080 --name simple-web-container simple-web-project
-                    '''
+                    bat 'docker-compose down'
+                    // Start the container
+                    bat 'docker-compose up -d'
                     echo "Deploy Completed: ${new Date()}"
                 }
             }
