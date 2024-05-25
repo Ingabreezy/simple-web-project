@@ -14,9 +14,12 @@ pipeline {
             steps {
                 script {
                     echo 'Running tests...'
-                    bat 'docker run --rm -d -p 8000:8000 --name simple-web-container simple-web-project'
+                    bat 'docker run --rm -d -p 8082:8080 --name simple-web-container simple-web-project'
                     // Adding a delay to ensure the server is up before running tests
-                    bat 'timeout /T 5'
+                    bat '''
+                    @echo off
+                    ping 127.0.0.1 -n 6 > nul
+                    '''
                     bat 'docker exec simple-web-container python test_script.py'
                     bat 'docker stop simple-web-container'
                 }
@@ -26,7 +29,7 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying the Docker container...'
-                    bat 'docker run -d -p 8000:8000 simple-web-project'
+                    bat 'docker run -d -p 8082:8080 simple-web-project'
                 }
             }
         }
