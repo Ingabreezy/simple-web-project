@@ -5,6 +5,4 @@ services:
     image: simple-web-project
     build: .
     ports:
-      - "8082:8080"
-    environment:
-      - DYNAMIC_PORT=8082
+      - "${DYNAMIC_PORT}:8082"

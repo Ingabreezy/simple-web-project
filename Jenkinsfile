@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DYNAMIC_PORT = "8082"
         CONTAINER_NAME = "simple-web-container-${env.BUILD_ID}"
     }
 
@@ -11,8 +10,25 @@ pipeline {
             steps {
                 script {
                     echo "Starting Build: ${new Date()}"
-                    bat 'docker-compose build'
+                    bat 'docker-compose -f docker-compose.template.yml build'
                     echo "Build Completed: ${new Date()}"
+                }
+            }
+        }
+        stage('Find Free Port') {
+            steps {
+                script {
+                    def port = bat(script: 'python find_free_port.py', returnStdout: true).trim()
+                    env.DYNAMIC_PORT = port
+                    echo "Selected free port: ${env.DYNAMIC_PORT}"
+
+                    // Replace the placeholder in the docker-compose file with the actual port
+                    bat """
+                    type docker-compose.template.yml | `
+                    powershell -Command "foreach ($line in Get-Content -Path 'docker-compose.template.yml') { `
+                        $line -replace '\\${DYNAMIC_PORT}', '${env.DYNAMIC_PORT}' `
+                    }" > docker-compose.yml
+                    """
                 }
             }
         }
